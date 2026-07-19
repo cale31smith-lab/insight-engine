@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>{{ shop_name }} — Insight Report</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+  @page {
+    size: Letter;
+    margin: 0;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Inter', sans-serif;
+    color: #1E2A3A;
+    font-size: 10.5pt;
+    line-height: 1.45;
+  }
+
+  .page {
+    padding: 0.55in 0.6in;
+    page-break-after: always;
+  }
+  .page:last-child { page-break-after: auto; }
+
+  /* ---------- Header band ---------- */
+  .header-band {
+    background: #0B1220;
+    color: #FFFFFF;
+    padding: 0.4in 0.6in 0.35in;
+    margin: -0.55in -0.6in 0.3in;
+    position: relative;
+  }
+  .eyebrow {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 8pt;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: #5EEAD4;
+    margin-bottom: 6px;
+  }
+  .report-title {
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 700;
+    font-size: 22pt;
+    letter-spacing: -0.01em;
+  }
+  .report-meta {
+    font-family: 'Inter', sans-serif;
+    font-size: 9.5pt;
+    color: #94A3B8;
+    margin-top: 4px;
+  }
+  .header-band .status-dot {
+    display: inline-block;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #5EEAD4;
+    margin-right: 6px;
+    vertical-align: middle;
+  }
+
+  /* ---------- Section labels ---------- */
+  .section-label {
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 600;
+    font-size: 12.5pt;
+    color: #0B1220;
+    margin-bottom: 3px;
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+  }
+  .section-label .tag {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 7.5pt;
+    color: #0EA5A0;
+    background: #E6FBF9;
+    border: 1px solid #99F1E8;
+    border-radius: 3px;
+    padding: 1px 6px;
+    letter-spacing: 0.04em;
+  }
+  .section-sub {
+    font-size: 9pt;
+    color: #64748B;
+    margin-bottom: 14px;
+  }
+
+  /* ---------- Scorecard grid ---------- */
+  .scorecard-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 9px;
+    margin-bottom: 22px;
+  }
+  .tile {
+    border: 1px solid #E2E8F0;
+    border-radius: 6px;
+    padding: 10px 11px;
+    background: #FBFCFD;
+  }
+  .tile-label {
+    font-size: 7.6pt;
+    color: #64748B;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin-bottom: 5px;
+    font-weight: 500;
+  }
+  .tile-value {
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 600;
+    font-size: 15pt;
+    color: #0B1220;
+    line-height: 1.1;
+  }
+  .tile-value.flag { color: #DC2626; }
+  .tile-value.ok { color: #16A34A; }
+  .tile-sub {
+    font-size: 7.3pt;
+    color: #94A3B8;
+    margin-top: 3px;
+  }
+
+  /* ---------- Finding cards ---------- */
+  .finding-card {
+    border: 1px solid #E2E8F0;
+    border-left: 3px solid #0EA5A0;
+    border-radius: 6px;
+    padding: 13px 15px;
+    margin-bottom: 11px;
+    position: relative;
+    background: #FFFFFF;
+  }
+  .finding-card.severity-high { border-left-color: #DC2626; }
+  .finding-card.severity-med { border-left-color: #D97706; }
+
+  .finding-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 12px;
+    margin-bottom: 7px;
+  }
+  .finding-rank {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 8pt;
+    color: #94A3B8;
+    margin-bottom: 2px;
+  }
+  .finding-headline {
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 600;
+    font-size: 11.5pt;
+    color: #0B1220;
+    line-height: 1.25;
+  }
+  .impact-pill {
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 600;
+    font-size: 9.5pt;
+    color: #FFFFFF;
+    background: #0B1220;
+    border-radius: 5px;
+    padding: 5px 10px;
+    white-space: nowrap;
+    text-align: right;
+    flex-shrink: 0;
+  }
+  .impact-pill .impact-label {
+    display: block;
+    font-size: 6.3pt;
+    color: #5EEAD4;
+    font-weight: 500;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    margin-bottom: 1px;
+  }
+
+  .finding-body-row {
+    font-size: 9.6pt;
+    color: #334155;
+    margin-bottom: 5px;
+  }
+  .finding-label-inline {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 7.3pt;
+    font-weight: 600;
+    color: #0EA5A0;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    margin-right: 6px;
+  }
+  .finding-measured {
+    font-size: 8.3pt;
+    color: #94A3B8;
+    margin-top: 7px;
+    padding-top: 7px;
+    border-top: 1px dashed #E2E8F0;
+  }
+
+  /* ---------- ROI ledger ---------- */
+  .ledger {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 4px;
+  }
+  .ledger th {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 7.5pt;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: #64748B;
+    text-align: left;
+    padding: 7px 10px;
+    border-bottom: 2px solid #0B1220;
+  }
+  .ledger th.num { text-align: right; }
+  .ledger td {
+    padding: 8px 10px;
+    border-bottom: 1px solid #EEF2F6;
+    font-size: 9.3pt;
+  }
+  .ledger td.num {
+    font-family: 'JetBrains Mono', monospace;
+    text-align: right;
+    font-weight: 500;
+  }
+  .ledger tr.total td {
+    border-top: 2px solid #0B1220;
+    border-bottom: none;
+    font-weight: 600;
+    font-size: 10pt;
+    padding-top: 10px;
+  }
+  .ledger tr.total td.num {
+    font-family: 'JetBrains Mono', monospace;
+    color: #0EA5A0;
+    font-size: 12pt;
+  }
+
+  .footer-note {
+    margin-top: 20px;
+    font-size: 7.6pt;
+    color: #94A3B8;
+    font-family: 'JetBrains Mono', monospace;
+  }
+</style>
+</head>
+<body>
+
+<div class="page">
+  <div class="header-band">
+    <div class="eyebrow">CONTRACTOR INSIGHT ENGINE</div>
+    <div class="report-title">{{ shop_name }}</div>
+    <div class="report-meta"><span class="status-dot"></span>{{ report_period }} Performance Report &nbsp;·&nbsp; Generated {{ generated_date }}</div>
+  </div>
+
+  <div class="section-label">Scorecard <span class="tag">7 METRICS</span></div>
+  <div class="section-sub">Shop-wide performance snapshot for the reporting period.</div>
+
+  <div class="scorecard-grid">
+    {% for tile in scorecard %}
+    <div class="tile">
+      <div class="tile-label">{{ tile.label }}</div>
+      <div class="tile-value {{ tile.status }}">{{ tile.value }}</div>
+      <div class="tile-sub">{{ tile.sub }}</div>
+    </div>
+    {% endfor %}
+  </div>
+
+  <div class="section-label">Top Findings <span class="tag">RANKED BY IMPACT</span></div>
+  <div class="section-sub">The {{ findings|length }} issues costing this business the most, in order.</div>
+
+  {% for f in findings %}
+  <div class="finding-card severity-{{ f.severity }}">
+    <div class="finding-top">
+      <div>
+        <div class="finding-rank">FINDING {{ "%02d"|format(f.rank) }} / {{ f.rule_id }}</div>
+        <div class="finding-headline">{{ f.finding }}</div>
+      </div>
+      <div class="impact-pill">
+        <span class="impact-label">Est. Annual Impact</span>
+        ${{ "{:,.0f}".format(f.dollar_impact) }}
+      </div>
+    </div>
+    <div class="finding-body-row"><span class="finding-label-inline">Why it matters</span>{{ f.why_it_matters }}</div>
+    <div class="finding-body-row"><span class="finding-label-inline">Recommended action</span>{{ f.action }}</div>
+    <div class="finding-measured">HOW MEASURED — {{ f.how_measured }}</div>
+  </div>
+  {% endfor %}
+</div>
+
+<div class="page">
+  <div class="section-label">ROI Ledger <span class="tag">TOTAL OPPORTUNITY</span></div>
+  <div class="section-sub">All findings this period, ranked by estimated annualized dollar impact.</div>
+
+  <table class="ledger">
+    <thead>
+      <tr>
+        <th>Finding</th>
+        <th>Category</th>
+        <th class="num">Est. Annual Impact</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for f in findings %}
+      <tr>
+        <td>{{ f.finding }}</td>
+        <td>{{ f.key }}</td>
+        <td class="num">${{ "{:,.0f}".format(f.dollar_impact) }}</td>
+      </tr>
+      {% endfor %}
+      <tr class="total">
+        <td colspan="2">Total identified opportunity</td>
+        <td class="num">${{ "{:,.0f}".format(total_opportunity) }}</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="footer-note">CONTRACTOR INSIGHT ENGINE — GENERATED {{ generated_date }} — NUMBERS COMPUTED DETERMINISTICALLY FROM SOURCE DATA, NARRATED BY AI, NEVER CALCULATED BY AI</div>
+</div>
+
+</body>
+</html>
