@@ -1,0 +1,11 @@
+tech_id,name,role,loaded_hourly_cost
+T01,Tech 1,Apprentice,31.01
+T02,Tech 2,Apprentice,35.43
+T03,Tech 3,HVAC Tech,31.77
+T04,Tech 4,HVAC Tech,46.27
+T05,Tech 5,Apprentice,30.35
+T06,Tech 6,Electrician,28.86
+T07,Tech 7,HVAC Tech,33.9
+T08,Tech 8,Apprentice,44.25
+T09,Tech 9,Apprentice,33.37
+T10,Tech 10,Apprentice,46.94

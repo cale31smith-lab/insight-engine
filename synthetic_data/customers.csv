@@ -1,0 +1,421 @@
+customer_id,segment
+C0001,Residential
+C0002,Residential
+C0003,Residential
+C0004,Commercial
+C0005,Property Management
+C0006,Residential
+C0007,Residential
+C0008,Residential
+C0009,Residential
+C0010,Property Management
+C0011,Residential
+C0012,Residential
+C0013,Residential
+C0014,Residential
+C0015,Residential
+C0016,Residential
+C0017,Residential
+C0018,Residential
+C0019,Commercial
+C0020,Residential
+C0021,Residential
+C0022,Residential
+C0023,Commercial
+C0024,Residential
+C0025,Residential
+C0026,Residential
+C0027,Property Management
+C0028,Property Management
+C0029,Commercial
+C0030,Commercial
+C0031,Commercial
+C0032,Residential
+C0033,Residential
+C0034,Property Management
+C0035,Residential
+C0036,Residential
+C0037,Property Management
+C0038,Property Management
+C0039,Property Management
+C0040,Residential
+C0041,Residential
+C0042,Residential
+C0043,Residential
+C0044,Residential
+C0045,Residential
+C0046,Commercial
+C0047,Property Management
+C0048,Residential
+C0049,Residential
+C0050,Property Management
+C0051,Residential
+C0052,Property Management
+C0053,Property Management
+C0054,Residential
+C0055,Residential
+C0056,Commercial
+C0057,Residential
+C0058,Property Management
+C0059,Residential
+C0060,Residential
+C0061,Commercial
+C0062,Residential
+C0063,Residential
+C0064,Residential
+C0065,Property Management
+C0066,Residential
+C0067,Property Management
+C0068,Residential
+C0069,Residential
+C0070,Residential
+C0071,Commercial
+C0072,Residential
+C0073,Residential
+C0074,Property Management
+C0075,Commercial
+C0076,Residential
+C0077,Residential
+C0078,Property Management
+C0079,Residential
+C0080,Residential
+C0081,Residential
+C0082,Residential
+C0083,Residential
+C0084,Residential
+C0085,Commercial
+C0086,Property Management
+C0087,Residential
+C0088,Commercial
+C0089,Property Management
+C0090,Property Management
+C0091,Residential
+C0092,Residential
+C0093,Residential
+C0094,Residential
+C0095,Property Management
+C0096,Property Management
+C0097,Commercial
+C0098,Property Management
+C0099,Residential
+C0100,Residential
+C0101,Residential
+C0102,Property Management
+C0103,Residential
+C0104,Residential
+C0105,Residential
+C0106,Residential
+C0107,Commercial
+C0108,Commercial
+C0109,Commercial
+C0110,Residential
+C0111,Residential
+C0112,Residential
+C0113,Residential
+C0114,Commercial
+C0115,Property Management
+C0116,Residential
+C0117,Residential
+C0118,Residential
+C0119,Residential
+C0120,Property Management
+C0121,Property Management
+C0122,Commercial
+C0123,Residential
+C0124,Residential
+C0125,Property Management
+C0126,Commercial
+C0127,Residential
+C0128,Residential
+C0129,Residential
+C0130,Commercial
+C0131,Commercial
+C0132,Property Management
+C0133,Property Management
+C0134,Property Management
+C0135,Residential
+C0136,Property Management
+C0137,Residential
+C0138,Commercial
+C0139,Residential
+C0140,Residential
+C0141,Residential
+C0142,Residential
+C0143,Residential
+C0144,Residential
+C0145,Residential
+C0146,Property Management
+C0147,Residential
+C0148,Residential
+C0149,Residential
+C0150,Residential
+C0151,Residential
+C0152,Residential
+C0153,Residential
+C0154,Residential
+C0155,Property Management
+C0156,Commercial
+C0157,Residential
+C0158,Residential
+C0159,Residential
+C0160,Residential
+C0161,Residential
+C0162,Property Management
+C0163,Residential
+C0164,Residential
+C0165,Commercial
+C0166,Residential
+C0167,Property Management
+C0168,Residential
+C0169,Residential
+C0170,Property Management
+C0171,Property Management
+C0172,Residential
+C0173,Residential
+C0174,Residential
+C0175,Residential
+C0176,Residential
+C0177,Residential
+C0178,Commercial
+C0179,Residential
+C0180,Property Management
+C0181,Commercial
+C0182,Residential
+C0183,Property Management
+C0184,Residential
+C0185,Residential
+C0186,Residential
+C0187,Property Management
+C0188,Residential
+C0189,Residential
+C0190,Residential
+C0191,Commercial
+C0192,Commercial
+C0193,Residential
+C0194,Residential
+C0195,Residential
+C0196,Commercial
+C0197,Property Management
+C0198,Residential
+C0199,Property Management
+C0200,Property Management
+C0201,Property Management
+C0202,Property Management
+C0203,Residential
+C0204,Residential
+C0205,Residential
+C0206,Residential
+C0207,Property Management
+C0208,Residential
+C0209,Residential
+C0210,Residential
+C0211,Residential
+C0212,Commercial
+C0213,Residential
+C0214,Residential
+C0215,Residential
+C0216,Commercial
+C0217,Residential
+C0218,Residential
+C0219,Commercial
+C0220,Residential
+C0221,Commercial
+C0222,Residential
+C0223,Residential
+C0224,Residential
+C0225,Residential
+C0226,Property Management
+C0227,Residential
+C0228,Residential
+C0229,Residential
+C0230,Property Management
+C0231,Residential
+C0232,Residential
+C0233,Residential
+C0234,Residential
+C0235,Residential
+C0236,Commercial
+C0237,Commercial
+C0238,Residential
+C0239,Residential
+C0240,Residential
+C0241,Residential
+C0242,Residential
+C0243,Residential
+C0244,Residential
+C0245,Residential
+C0246,Residential
+C0247,Residential
+C0248,Residential
+C0249,Residential
+C0250,Residential
+C0251,Residential
+C0252,Commercial
+C0253,Property Management
+C0254,Residential
+C0255,Property Management
+C0256,Residential
+C0257,Commercial
+C0258,Residential
+C0259,Commercial
+C0260,Residential
+C0261,Commercial
+C0262,Property Management
+C0263,Residential
+C0264,Residential
+C0265,Residential
+C0266,Residential
+C0267,Property Management
+C0268,Commercial
+C0269,Residential
+C0270,Residential
+C0271,Commercial
+C0272,Residential
+C0273,Residential
+C0274,Property Management
+C0275,Residential
+C0276,Residential
+C0277,Residential
+C0278,Commercial
+C0279,Residential
+C0280,Residential
+C0281,Property Management
+C0282,Residential
+C0283,Residential
+C0284,Commercial
+C0285,Property Management
+C0286,Residential
+C0287,Residential
+C0288,Residential
+C0289,Residential
+C0290,Residential
+C0291,Residential
+C0292,Residential
+C0293,Commercial
+C0294,Commercial
+C0295,Residential
+C0296,Residential
+C0297,Property Management
+C0298,Property Management
+C0299,Residential
+C0300,Residential
+C0301,Commercial
+C0302,Commercial
+C0303,Property Management
+C0304,Commercial
+C0305,Residential
+C0306,Residential
+C0307,Property Management
+C0308,Residential
+C0309,Residential
+C0310,Residential
+C0311,Commercial
+C0312,Property Management
+C0313,Residential
+C0314,Property Management
+C0315,Property Management
+C0316,Residential
+C0317,Residential
+C0318,Property Management
+C0319,Residential
+C0320,Residential
+C0321,Residential
+C0322,Residential
+C0323,Commercial
+C0324,Residential
+C0325,Property Management
+C0326,Commercial
+C0327,Residential
+C0328,Property Management
+C0329,Residential
+C0330,Residential
+C0331,Residential
+C0332,Property Management
+C0333,Residential
+C0334,Residential
+C0335,Property Management
+C0336,Property Management
+C0337,Residential
+C0338,Residential
+C0339,Commercial
+C0340,Residential
+C0341,Residential
+C0342,Commercial
+C0343,Residential
+C0344,Residential
+C0345,Residential
+C0346,Property Management
+C0347,Residential
+C0348,Commercial
+C0349,Residential
+C0350,Commercial
+C0351,Residential
+C0352,Residential
+C0353,Residential
+C0354,Residential
+C0355,Property Management
+C0356,Property Management
+C0357,Commercial
+C0358,Property Management
+C0359,Residential
+C0360,Residential
+C0361,Commercial
+C0362,Commercial
+C0363,Residential
+C0364,Property Management
+C0365,Residential
+C0366,Commercial
+C0367,Residential
+C0368,Property Management
+C0369,Residential
+C0370,Property Management
+C0371,Residential
+C0372,Residential
+C0373,Property Management
+C0374,Residential
+C0375,Property Management
+C0376,Residential
+C0377,Residential
+C0378,Residential
+C0379,Property Management
+C0380,Residential
+C0381,Residential
+C0382,Property Management
+C0383,Residential
+C0384,Residential
+C0385,Residential
+C0386,Property Management
+C0387,Residential
+C0388,Property Management
+C0389,Commercial
+C0390,Property Management
+C0391,Property Management
+C0392,Residential
+C0393,Property Management
+C0394,Residential
+C0395,Residential
+C0396,Commercial
+C0397,Residential
+C0398,Residential
+C0399,Property Management
+C0400,Residential
+C0401,Residential
+C0402,Commercial
+C0403,Residential
+C0404,Property Management
+C0405,Residential
+C0406,Commercial
+C0407,Residential
+C0408,Property Management
+C0409,Residential
+C0410,Residential
+C0411,Residential
+C0412,Property Management
+C0413,Commercial
+C0414,Commercial
+C0415,Commercial
+C0416,Property Management
+C0417,Residential
+C0418,Property Management
+C0419,Property Management
+C0420,Residential
