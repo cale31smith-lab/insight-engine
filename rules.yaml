@@ -1,0 +1,56 @@
+rules:
+  - id: negative_margin_job_type
+    description: "Job type has negative gross margin — losing money on every job"
+    metric: gross_margin_by_job_type
+    scope: job_type
+    comparator: lt
+    threshold: -0.05
+    recommendation_template_id: fix_pricing_or_drop_job_type
+
+  - id: high_callback_tech
+    description: "Technician has a callback rate well above the team median"
+    metric: callback_rate_by_tech
+    scope: tech_id
+    comparator: gt
+    threshold: 0.15
+    recommendation_template_id: retrain_or_coach_tech
+
+  - id: underutilized_tech
+    description: "Technician's billable utilization is well below target"
+    metric: tech_utilization
+    scope: tech_id
+    comparator: lt
+    threshold: 0.55
+    recommendation_template_id: increase_scheduling_or_reassign
+
+  - id: low_win_rate_job_type
+    description: "Quote type rarely converts to a won job"
+    metric: win_rate_by_job_type
+    scope: job_type
+    comparator: lt
+    threshold: 0.20
+    recommendation_template_id: revisit_quote_pricing_or_stop_quoting
+
+  - id: inconsistent_pricing_job_type
+    description: "Job type has highly inconsistent pricing across jobs"
+    metric: pricing_consistency
+    scope: job_type
+    comparator: gt
+    threshold: 0.48
+    recommendation_template_id: standardize_pricing
+
+  - id: slow_pay_segment
+    description: "Customer segment takes far longer than others to pay"
+    metric: cash_cycle_by_segment
+    scope: segment
+    comparator: gt
+    threshold: 30
+    recommendation_template_id: tighten_collections_or_terms
+
+  - id: high_ar_outstanding
+    description: "Total accounts receivable outstanding is high"
+    metric: ar_outstanding
+    scope: global
+    comparator: gt
+    threshold: 500
+    recommendation_template_id: collections_push
