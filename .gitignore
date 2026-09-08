@@ -1,0 +1,6 @@
+__pycache__/
+*.pyc
+.venv/
+output/
+saved_column_mappings.json
+*.pdf
