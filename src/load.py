@@ -16,10 +16,12 @@ later.
 """
 
 import csv
+from datetime import date
 from pathlib import Path
-from typing import Type, TypeVar
+from typing import Type, TypeVar, Union, get_args, get_origin
 
 import pandas as pd
+from dateutil import parser as date_parser
 from pydantic import BaseModel, ValidationError
 
 from src.schema import Customer, Invoice, Job, Quote, Technician, TimeEntry
@@ -31,9 +33,86 @@ class DataLoadError(Exception):
     """Raised when a row fails schema validation, from either a CSV or a DataFrame."""
 
 
+def _unwrap_optional(annotation):
+    """Optional[date] -> date, so field-type checks below work on Optional fields too."""
+    if get_origin(annotation) is Union:
+        non_none_args = [a for a in get_args(annotation) if a is not type(None)]
+        if len(non_none_args) == 1:
+            return non_none_args[0]
+    return annotation
+
+
+def _normalize_date(value):
+    """
+    Real-world exports use every date format imaginable: '01/15/2026',
+    '15-Jan-2026', '2026-01-15T00:00:00', etc. Pydantic's date field only
+    accepts ISO format (YYYY-MM-DD) out of the box and rejects the rest
+    outright. Parse permissively here; let Pydantic do the actual type
+    validation afterward on the normalized value.
+
+    ASSUMPTION: month-first (US) parsing for ambiguous dates like '01/02/2026'
+    -- correct for the US contractor market this targets, but worth revisiting
+    if a source ever needs day-first parsing.
+    """
+    if value is None or isinstance(value, date):
+        return value
+    if isinstance(value, str):
+        try:
+            return date_parser.parse(value, dayfirst=False).date()
+        except (ValueError, OverflowError, TypeError):
+            return value  # leave as-is; Pydantic will raise its own clear error
+    return value
+
+
+def _normalize_currency(value):
+    """
+    Real-world exports commonly format money as '$5,000.00' or with
+    accounting-style negatives like '(500.00)'. Strip that down to a plain
+    number Pydantic's float validator accepts.
+    """
+    if value is None or isinstance(value, (int, float)):
+        return value
+    if isinstance(value, str):
+        cleaned = value.strip().replace("$", "").replace(",", "")
+        if cleaned.startswith("(") and cleaned.endswith(")"):
+            cleaned = "-" + cleaned[1:-1]
+        try:
+            return float(cleaned)
+        except ValueError:
+            return value  # leave as-is; Pydantic will raise its own clear error
+    return value
+
+
+def _normalize_row(row: dict, model: Type[T]) -> dict:
+    """
+    Normalize known-messy formats (dates, currency strings) per field,
+    based on the Pydantic model's own declared field types -- so this
+    only ever touches fields that are actually typed as `date` or
+    `float`, never guesses based on field name or content.
+    """
+    normalized = {}
+    for field_name, value in row.items():
+        field_info = model.model_fields.get(field_name)
+        if field_info is None:
+            normalized[field_name] = value
+            continue
+        field_type = _unwrap_optional(field_info.annotation)
+        if field_type is date:
+            normalized[field_name] = _normalize_date(value)
+        elif field_type is float:
+            normalized[field_name] = _normalize_currency(value)
+        else:
+            normalized[field_name] = value
+    return normalized
+
+
 def _validate_rows(rows: list[dict], model: Type[T], source_name: str) -> list[T]:
     """
     Core validator — every entry point (CSV or DataFrame) ends up here.
+    Every row is normalized (dates, currency formatting) before validation,
+    so both the CSV and DataFrame paths get the same tolerance for messy
+    real-world formats -- this is what Step 10's live connectors will need.
+
     row_num starts at 2 to match a CSV's line numbering (header = line 1);
     for DataFrame sources it's the record's position + 1, still useful for
     pinpointing which row failed.
@@ -41,7 +120,8 @@ def _validate_rows(rows: list[dict], model: Type[T], source_name: str) -> list[T
     validated: list[T] = []
     for row_num, raw_row in enumerate(rows, start=2):
         try:
-            validated.append(model.model_validate(raw_row))
+            normalized_row = _normalize_row(raw_row, model)
+            validated.append(model.model_validate(normalized_row))
         except ValidationError as e:
             raise DataLoadError(
                 f"{source_name}, row {row_num}: invalid data.\n{e}"
