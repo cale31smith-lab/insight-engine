@@ -6,18 +6,20 @@ fixed internal schema, without ever changing load.py / metrics.py / rules.py.
 
 Flow:
   1. User uploads a CSV (e.g. their "jobs" export from Jobber).
-  2. We show a dropdown per REQUIRED field, pre-filled with our best guess
-     (fuzzy match against their actual headers).
-  3. User confirms/corrects the mapping once.
+  2. We show a dropdown per REQUIRED field, pre-filled with our best guess.
+     The guess comes from Claude (semantic match against real column names
+     and a few sample rows) when ANTHROPIC_API_KEY is available, falling
+     back to fuzzy string matching otherwise -- either way it's ONLY ever
+     a pre-filled suggestion.
+  3. User confirms/corrects the mapping once. Nothing is ever applied
+     without this human confirmation step, regardless of which suggestion
+     method produced the default -- a wrong LLM guess costs one click to
+     fix, not a wrong number in a client's report.
   4. We save it keyed by a "source name" they choose (e.g. "Jobber") so the
      next time they upload from the same software, the mapping auto-applies
-     with zero clicks.
+     with zero clicks and zero further API calls.
   5. We rename their columns to match our schema and hand off a clean
      DataFrame — load.py never has to know the original headers existed.
-
-IMPORTANT: Verify REQUIRED_SCHEMAS below against the actual field names in
-schema.py before using this. These are reconstructed from memory and may
-not be byte-for-byte correct.
 """
 
 import json
@@ -60,13 +62,13 @@ def save_mapping(source_name: str, entity: str, mapping: dict) -> None:
     MAPPING_STORE_PATH.write_text(json.dumps(all_mappings, indent=2))
 
 
-def suggest_mapping(required_fields: list[str], uploaded_columns: list[str]) -> dict:
+def _suggest_mapping_fuzzy(required_fields: list[str], uploaded_columns: list[str]) -> dict:
     """
-    Best-guess mapping using fuzzy string matching on column names.
-    e.g. required 'revenue' vs uploaded 'job_amount' won't match well —
-    fuzzy matching handles near-misses like 'job_type' vs 'JobType',
-    not semantic renames. That's fine: it's a starting guess, the user
-    confirms every field before anything runs.
+    Fallback: best-guess mapping using fuzzy string matching on column
+    names. Catches near-misses like 'job_type' vs 'JobType', but NOT
+    semantic renames like 'job_amount' vs 'revenue' -- for those you
+    need _suggest_mapping_llm below. Used automatically whenever the
+    LLM path is unavailable or fails.
     """
     suggestions = {}
     remaining_columns = list(uploaded_columns)
@@ -74,6 +76,109 @@ def suggest_mapping(required_fields: list[str], uploaded_columns: list[str]) -> 
         matches = difflib.get_close_matches(field, remaining_columns, n=1, cutoff=0.4)
         suggestions[field] = matches[0] if matches else None
     return suggestions
+
+
+def _suggest_mapping_llm(
+    entity: str, required_fields: list[str], uploaded_columns: list[str], sample_rows: list[dict]
+) -> dict | None:
+    """
+    Ask Claude to semantically match uploaded_columns to required_fields,
+    using a few real sample rows as context (e.g. this is what lets it
+    catch 'job_amount' -> 'revenue', which fuzzy string matching can't).
+
+    Returns None on ANY failure (no API key, network error, malformed
+    response) so the caller falls back to fuzzy matching -- this must
+    never crash the mapping UI, it's a nice-to-have speedup, not a
+    dependency.
+
+    Every value in the returned mapping is validated to be either None
+    or an actual column from uploaded_columns -- a hallucinated column
+    name that doesn't exist in the upload is discarded (set to None)
+    rather than silently accepted. Same principle as narrate.py's
+    validate_narration: never trust an LLM output that doesn't match
+    the ground truth we already have.
+    """
+    try:
+        from anthropic import Anthropic
+    except ImportError:
+        return None
+
+    try:
+        client = Anthropic()  # reads ANTHROPIC_API_KEY from env; raises if unset
+
+        tool_schema = {
+            "name": "suggest_column_mapping",
+            "description": "Map each required field to the best-matching uploaded column name, or null if none fits.",
+            "input_schema": {
+                "type": "object",
+                "properties": {
+                    field: {
+                        "type": ["string", "null"],
+                        "description": f"The uploaded column name that corresponds to '{field}', or null if no column matches.",
+                    }
+                    for field in required_fields
+                },
+                "required": required_fields,
+                "additionalProperties": False,
+            },
+        }
+
+        prompt = (
+            f"This is a '{entity}' data table for a home-services contractor business "
+            f"(HVAC/electrical). The uploaded file has these columns:\n"
+            f"{uploaded_columns}\n\n"
+            f"Here are up to 3 sample rows for context:\n"
+            f"{json.dumps(sample_rows, default=str, indent=2)}\n\n"
+            f"Map each of these required fields to the uploaded column that means the same "
+            f"thing (semantic match, not just similar spelling — e.g. 'job_amount' likely "
+            f"means 'revenue'): {required_fields}\n\n"
+            f"Only use column names that actually appear in the uploaded columns list above. "
+            f"If nothing in the data matches a required field, use null for that field."
+        )
+
+        response = client.messages.create(
+            model="claude-haiku-4-5-20251001",
+            max_tokens=1024,
+            tools=[tool_schema],
+            tool_choice={"type": "tool", "name": "suggest_column_mapping"},
+            messages=[{"role": "user", "content": prompt}],
+        )
+
+        tool_use_blocks = [b for b in response.content if b.type == "tool_use"]
+        if not tool_use_blocks:
+            return None
+        raw_mapping = tool_use_blocks[0].input
+
+        # Validate: every value must be None or an actual uploaded column.
+        # A field the LLM omitted, or a hallucinated column name, becomes
+        # None rather than crashing the UI or silently mismapping.
+        validated = {}
+        for field in required_fields:
+            value = raw_mapping.get(field)
+            validated[field] = value if value in uploaded_columns else None
+        return validated
+
+    except Exception:
+        # Any failure (missing key, network, rate limit, malformed response)
+        # -- fall back to fuzzy matching rather than breaking the mapping UI.
+        return None
+
+
+def suggest_mapping(
+    entity: str, required_fields: list[str], uploaded_columns: list[str], sample_rows: list[dict] | None = None
+) -> dict:
+    """
+    Best-guess mapping, LLM-assisted when possible. Tries the semantic
+    (LLM) suggestion first if sample_rows are provided; falls back to
+    fuzzy string matching if the LLM path is unavailable or fails.
+    Either way, this is only ever a starting point — render_mapping_ui
+    still requires human confirmation before anything is used.
+    """
+    if sample_rows is not None:
+        llm_suggestion = _suggest_mapping_llm(entity, required_fields, uploaded_columns, sample_rows)
+        if llm_suggestion is not None:
+            return llm_suggestion
+    return _suggest_mapping_fuzzy(required_fields, uploaded_columns)
 
 
 def apply_mapping(df: pd.DataFrame, mapping: dict) -> pd.DataFrame:
@@ -117,7 +222,17 @@ def render_mapping_ui(entity: str, uploaded_df: pd.DataFrame, source_name: str) 
         else:
             return apply_mapping(uploaded_df, saved)
 
-    suggestions = suggest_mapping(required_fields, uploaded_columns)
+    # Cache the suggestion in session_state, keyed by source+entity+the
+    # actual column set. Streamlit reruns this whole script on every
+    # interaction (e.g. clicking a different entity's dropdown) -- without
+    # caching, that would re-call the API on every single rerun instead of
+    # once per upload.
+    cache_key = f"_suggestion_cache_{source_name}_{entity}_{hash(tuple(uploaded_columns))}"
+    if cache_key not in st.session_state:
+        sample_rows = uploaded_df.head(3).to_dict(orient="records")
+        st.session_state[cache_key] = suggest_mapping(entity, required_fields, uploaded_columns, sample_rows)
+    suggestions = st.session_state[cache_key]
+
     mapping = {}
     for field in required_fields:
         default = suggestions.get(field)
