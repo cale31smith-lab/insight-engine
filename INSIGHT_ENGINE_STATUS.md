@@ -18,7 +18,7 @@ A five-stage pipeline that takes contractor CSV data and produces a finished PDF
 | LOAD | `src/load.py`, `src/schema.py` | Ingests CSVs into validated Pydantic models (Technician, Customer, Job, Quote, Invoice, TimeEntry) |
 | METRICS | `src/metrics.py` | Computes 7 operational metrics: margin by job type, callback rate, tech utilization, quote win rate, pricing consistency, cash cycle, AR outstanding. Supporting metrics `avg_ticket` and `revenue_per_tech_day` also exist and are used internally by the dollar-impact estimators |
 | RULES | `src/rules.py` + `rules.yaml` | Applies thresholds to flag issues, each with a dollar-impact estimate. Thresholds live in `rules.yaml`; dollar-impact estimators are Python functions in `src/rules.py` (`IMPACT_FNS`), one per rule |
-| NARRATE | `src/narrate.py` | One LLM call per finding, converting numbers into plain-English explanations |
+| NARRATE | `src/narrate.py` | One LLM call per finding, converting numbers into plain-English explanations. `narrate_with_retry` (3 attempts, 2 s delay) lives here and is called by both the CLI runner and the Streamlit app |
 | RENDER | `src/report.py` | Jinja2 + WeasyPrint → professional navy/teal PDF |
 
 **Runner:** `src/run.py` ties all five stages together in one CLI command.
