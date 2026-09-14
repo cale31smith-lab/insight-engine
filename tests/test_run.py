@@ -9,13 +9,12 @@ in CI). The live, real-API end-to-end run is a manual check
 """
 
 from pathlib import Path
-from unittest.mock import patch
 
 import pytest
 
 from src.narrate import Narration, NarrationError
 from src.rules import FiredRule
-from src.run import narrate_with_retry, main
+from src.run import main
 
 SAMPLE_RULE = FiredRule(
     rule_id="negative_margin_job_type",
@@ -34,29 +33,6 @@ SAMPLE_NARRATION = Narration(
 )
 
 
-def test_narrate_with_retry_succeeds_first_try():
-    with patch("src.run.narrate_finding", return_value=SAMPLE_NARRATION) as mock_call:
-        result = narrate_with_retry(SAMPLE_RULE)
-    assert result == SAMPLE_NARRATION
-    assert mock_call.call_count == 1
-
-
-def test_narrate_with_retry_succeeds_after_transient_failure():
-    with patch("src.run.narrate_finding", side_effect=[NarrationError("boom"), SAMPLE_NARRATION]) as mock_call, \
-         patch("src.run.time.sleep"):  # skip the real delay in tests
-        result = narrate_with_retry(SAMPLE_RULE, max_retries=3)
-    assert result == SAMPLE_NARRATION
-    assert mock_call.call_count == 2
-
-
-def test_narrate_with_retry_gives_up_after_max_attempts():
-    with patch("src.run.narrate_finding", side_effect=NarrationError("boom")) as mock_call, \
-         patch("src.run.time.sleep"):
-        result = narrate_with_retry(SAMPLE_RULE, max_retries=3)
-    assert result is None
-    assert mock_call.call_count == 3
-
-
 def test_full_pipeline_end_to_end(tmp_path, monkeypatch):
     """
     Runs the entire LOAD -> METRICS -> RULES -> NARRATE -> RENDER pipeline
@@ -67,7 +43,7 @@ def test_full_pipeline_end_to_end(tmp_path, monkeypatch):
     output_path = tmp_path / "report.pdf"
     synthetic_data_dir = Path(__file__).parent.parent / "synthetic_data"
 
-    monkeypatch.setattr("src.run.narrate_finding", lambda rule: SAMPLE_NARRATION)
+    monkeypatch.setattr("src.narrate.narrate_finding", lambda rule: SAMPLE_NARRATION)
     monkeypatch.setattr(
         "sys.argv",
         [

@@ -18,7 +18,7 @@ import time
 from pathlib import Path
 
 from src.load import load_all
-from src.narrate import narrate_finding, NarrationError
+from src.narrate import narrate_with_retry, NarrationError
 from src.report import render_report, NarratedFinding
 from src.rules import run_rules
 
@@ -26,28 +26,6 @@ PROJECT_ROOT = Path(__file__).parent.parent
 DEFAULT_RULES_PATH = PROJECT_ROOT / "rules.yaml"
 
 TOP_N_FINDINGS = 8  # generous cap; with 7 rules currently defined, this effectively shows every real finding
-MAX_RETRIES = 3
-RETRY_DELAY_SECONDS = 2
-
-
-def narrate_with_retry(rule, max_retries: int = MAX_RETRIES) -> "Narration | None":
-    """
-    A single flaky network call shouldn't take down the whole report.
-    Retries a few times with a short delay, then gives up on that one
-    finding and lets the rest of the report generate -- printing a
-    warning so the gap is visible rather than silent.
-    """
-    last_error = None
-    for attempt in range(1, max_retries + 1):
-        try:
-            return narrate_finding(rule)
-        except (NarrationError, Exception) as e:  # network errors are broad; narrow later if needed
-            last_error = e
-            if attempt < max_retries:
-                print(f"  [retry {attempt}/{max_retries}] {rule.rule_id} failed ({e}); retrying...")
-                time.sleep(RETRY_DELAY_SECONDS)
-    print(f"  [SKIPPED] {rule.rule_id} failed after {max_retries} attempts: {last_error}")
-    return None
 
 
 def main():

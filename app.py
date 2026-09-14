@@ -26,7 +26,7 @@ import streamlit as st
 import column_mapping as cm
 from app_logic import ENTITIES, missing_and_duplicate_entities, unresolved_entities
 from src.load import load_all_from_dfs, DataLoadError
-from src.narrate import narrate_finding, NarrationError
+from src.narrate import narrate_with_retry
 from src.report import render_report, NarratedFinding
 from src.rules import run_rules
 
@@ -161,11 +161,11 @@ if not unresolved_entities(st.session_state.mapped_dfs) and shop_name and report
         progress = st.progress(0.0, text="Narrating findings...")
         for i, rule in enumerate(top_fired, start=1):
             progress.progress(i / len(top_fired), text=f"Narrating finding {i}/{len(top_fired)}: {rule.rule_id}")
-            try:
-                narration = narrate_finding(rule)
+            narration = narrate_with_retry(rule)
+            if narration is not None:
                 narrated.append(NarratedFinding(rule=rule, narration=narration))
-            except NarrationError as e:
-                st.warning(f"Skipped '{rule.rule_id}': {e}")
+            else:
+                st.warning(f"Skipped '{rule.rule_id}': all retry attempts failed.")
         progress.empty()
 
         if not narrated:

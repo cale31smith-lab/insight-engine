@@ -9,12 +9,12 @@ network access and no API key -- exactly the point, since this logic
 must be provably correct independent of any live model call.
 """
 
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 
 import pytest
 
 from src.rules import FiredRule
-from src.narrate import validate_narration, narrate_finding, NarrationError
+from src.narrate import validate_narration, narrate_finding, narrate_with_retry, NarrationError, Narration
 
 RULE = FiredRule(
     rule_id="negative_margin_job_type",
@@ -92,6 +92,35 @@ def test_narrate_finding_uses_mocked_client():
     narration = narrate_finding(RULE, client=mock_client)
     assert narration.finding == VALID_RESPONSE["finding"]
     mock_client.messages.create.assert_called_once()
+
+
+SAMPLE_NARRATION = Narration(
+    finding="Test finding.", why_it_matters="Test.", action="Test.",
+    how_measured="Test.", metric_value_echoed=-0.319, dollar_impact_echoed=316783.0,
+)
+
+
+def test_narrate_with_retry_succeeds_first_try():
+    with patch("src.narrate.narrate_finding", return_value=SAMPLE_NARRATION) as mock_call:
+        result = narrate_with_retry(RULE)
+    assert result == SAMPLE_NARRATION
+    assert mock_call.call_count == 1
+
+
+def test_narrate_with_retry_succeeds_after_transient_failure():
+    with patch("src.narrate.narrate_finding", side_effect=[NarrationError("boom"), SAMPLE_NARRATION]) as mock_call, \
+         patch("src.narrate.time.sleep"):
+        result = narrate_with_retry(RULE, max_retries=3)
+    assert result == SAMPLE_NARRATION
+    assert mock_call.call_count == 2
+
+
+def test_narrate_with_retry_gives_up_after_max_attempts():
+    with patch("src.narrate.narrate_finding", side_effect=NarrationError("boom")) as mock_call, \
+         patch("src.narrate.time.sleep"):
+        result = narrate_with_retry(RULE, max_retries=3)
+    assert result is None
+    assert mock_call.call_count == 3
 
 
 def test_narrate_finding_rejects_mocked_bad_response():

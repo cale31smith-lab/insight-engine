@@ -14,6 +14,7 @@ outright rather than trusted.
 
 from __future__ import annotations
 
+import time
 from typing import Optional
 
 import anthropic
@@ -142,3 +143,28 @@ def validate_narration(rule: FiredRule, raw: dict, tolerance: float = 0.01) -> N
 def narrate_finding(rule: FiredRule, client: Optional["anthropic.Anthropic"] = None) -> Narration:
     raw = _call_llm(rule, client=client)
     return validate_narration(rule, raw)
+
+
+MAX_RETRIES = 3
+RETRY_DELAY_SECONDS = 2
+
+
+def narrate_with_retry(rule: FiredRule, max_retries: int = MAX_RETRIES) -> Narration | None:
+    """
+    A single flaky network call shouldn't take down the whole report.
+    Retries up to max_retries times with a short delay, then gives up on
+    that finding and returns None -- printing a warning so the gap is
+    visible rather than silent. Used by both the CLI runner and the
+    Streamlit app so retry behaviour is identical across both paths.
+    """
+    last_error = None
+    for attempt in range(1, max_retries + 1):
+        try:
+            return narrate_finding(rule)
+        except (NarrationError, Exception) as e:
+            last_error = e
+            if attempt < max_retries:
+                print(f"  [retry {attempt}/{max_retries}] {rule.rule_id} failed ({e}); retrying...")
+                time.sleep(RETRY_DELAY_SECONDS)
+    print(f"  [SKIPPED] {rule.rule_id} failed after {max_retries} attempts: {last_error}")
+    return None
