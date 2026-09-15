@@ -2,5 +2,6 @@ __pycache__/
 *.pyc
 .venv/
 output/
+internal_reports/
 saved_column_mappings.json
 *.pdf

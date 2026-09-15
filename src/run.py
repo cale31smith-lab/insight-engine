@@ -19,8 +19,9 @@ from pathlib import Path
 
 from src.load import load_all
 from src.narrate import narrate_with_retry, NarrationError
-from src.report import render_report, NarratedFinding
+from src.report import NarratedFinding
 from src.rules import run_rules
+from src.security import deliver_report, mark_sent
 
 PROJECT_ROOT = Path(__file__).parent.parent
 DEFAULT_RULES_PATH = PROJECT_ROOT / "rules.yaml"
@@ -30,12 +31,26 @@ TOP_N_FINDINGS = 8  # generous cap; with 7 rules currently defined, this effecti
 
 def main():
     parser = argparse.ArgumentParser(description="Run the Contractor Insight Engine pipeline.")
-    parser.add_argument("--data", type=Path, required=True, help="Path to folder of input CSVs")
+    parser.add_argument("--data", type=Path, default=None, help="Path to folder of input CSVs")
     parser.add_argument("--shop-name", type=str, default="Sample Shop", help="Shop name for the report header")
     parser.add_argument("--period", type=str, default="Current Period", help="Reporting period label")
     parser.add_argument("--rules", type=Path, default=DEFAULT_RULES_PATH, help="Path to rules.yaml")
-    parser.add_argument("--output", type=Path, default=Path("output/report.pdf"), help="Output PDF path")
+    parser.add_argument("--output", type=Path, default=Path("output/report.pdf"), help="Output PDF path (password-protected client copy)")
+    parser.add_argument("--mark-sent", action="store_true", help="Log that a report was sent; requires --shop-name and --report-date")
+    parser.add_argument("--report-date", type=str, default=None, help="Report date in YYYY-MM-DD format (used with --mark-sent)")
     args = parser.parse_args()
+
+    if args.mark_sent:
+        if not args.report_date:
+            print("Error: --report-date YYYY-MM-DD is required with --mark-sent")
+            sys.exit(1)
+        mark_sent(args.shop_name, args.report_date)
+        print(f"Marked '{args.shop_name}' report for {args.report_date} as sent.")
+        return
+
+    if not args.data:
+        print("Error: --data is required for report generation")
+        sys.exit(1)
 
     start = time.time()
 
@@ -67,16 +82,19 @@ def main():
         print("All narration calls failed -- cannot render a report. Check your ANTHROPIC_API_KEY.")
         sys.exit(1)
 
-    print(f"[5/5] Rendering report to {args.output} ...")
-    result_path = render_report(
+    print(f"[5/5] Rendering and protecting report ...")
+    client_path, password = deliver_report(
         ds, narrated,
         shop_name=args.shop_name,
         report_period=args.period,
-        output_path=args.output,
+        client_pdf_path=args.output,
+        delivery_method="cli",
     )
 
     elapsed = time.time() - start
-    print(f"\nDone in {elapsed:.1f}s -- {result_path.resolve()}")
+    print(f"\nDone in {elapsed:.1f}s -- {client_path.resolve()}")
+    print(f"Password: {password}")
+    print("(Share the password with the client separately. Run --mark-sent after emailing.)")
     if elapsed > 120:
         print("WARNING: exceeded the 2-minute acceptance target from the build guide.")
 

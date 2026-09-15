@@ -18,6 +18,7 @@ so it stays unit-testable outside a live Streamlit session.
 
 import io
 import tempfile
+from datetime import date
 from pathlib import Path
 
 import pandas as pd
@@ -27,8 +28,9 @@ import column_mapping as cm
 from app_logic import ENTITIES, missing_and_duplicate_entities, unresolved_entities
 from src.load import load_all_from_dfs, DataLoadError
 from src.narrate import narrate_with_retry
-from src.report import render_report, NarratedFinding
+from src.report import NarratedFinding
 from src.rules import run_rules
+from src.security import deliver_report, mark_sent
 
 RULES_PATH = Path(__file__).parent / "rules.yaml"
 TOP_N_FINDINGS = 8
@@ -49,11 +51,14 @@ if "file_bytes" not in st.session_state:
     # once per confirmed mapping) -- the widget can lose track of files that were
     # uploaded earlier in the session. Snapshotting bytes here, once, and reading only
     # from this dict from then on avoids that entirely.
+if "generated_report" not in st.session_state:
+    st.session_state.generated_report = None  # set after generation: {pdf_bytes, password, shop_name, report_date}
 
 if st.button("Start over"):
     st.session_state.mapped_dfs = {}
     st.session_state.file_entity = {}
     st.session_state.file_bytes = {}
+    st.session_state.generated_report = None
     st.rerun()
 
 # --- Step 1: report details ---
@@ -172,21 +177,36 @@ if not unresolved_entities(st.session_state.mapped_dfs) and shop_name and report
             st.error("All narration calls failed. Check that ANTHROPIC_API_KEY is set correctly.")
             st.stop()
 
-        with st.spinner("Rendering PDF..."):
+        with st.spinner("Rendering and protecting PDF..."):
             with tempfile.TemporaryDirectory() as tmp_dir:
-                output_path = Path(tmp_dir) / "report.pdf"
-                render_report(
+                client_pdf_path = Path(tmp_dir) / "report_protected.pdf"
+                _, password = deliver_report(
                     ds, narrated,
                     shop_name=shop_name,
                     report_period=report_period,
-                    output_path=output_path,
+                    client_pdf_path=client_pdf_path,
+                    delivery_method="web",
                 )
-                pdf_bytes = output_path.read_bytes()
+                pdf_bytes = client_pdf_path.read_bytes()
 
-        st.success("Report generated.")
+        st.session_state.generated_report = {
+            "pdf_bytes": pdf_bytes,
+            "password": password,
+            "shop_name": shop_name,
+            "report_date": date.today().isoformat(),
+        }
+
+    if st.session_state.generated_report:
+        r = st.session_state.generated_report
+        st.success("Report ready.")
         st.download_button(
-            label="Download PDF Report",
-            data=pdf_bytes,
-            file_name=f"{shop_name.replace(' ', '_')}_Insight_Report.pdf",
+            label="Download Protected PDF",
+            data=r["pdf_bytes"],
+            file_name=f"{r['shop_name'].replace(' ', '_')}_Insight_Report.pdf",
             mime="application/pdf",
         )
+        st.write("**Password — share this with the client separately from the PDF:**")
+        st.code(r["password"])
+        if st.button("Mark as Sent (after emailing the report to the client)"):
+            mark_sent(r["shop_name"], r["report_date"])
+            st.success("Logged as sent in delivery log.")
