@@ -22,6 +22,7 @@ from src.security import (
     cleanup_old_internal_reports,
     mark_sent,
     protect_pdf,
+    set_test_mode,
 )
 
 
@@ -157,3 +158,22 @@ def test_cleanup_returns_zero_when_dir_absent(tmp_path, monkeypatch):
     monkeypatch.setattr(sec, "INTERNAL_REPORTS_DIR", tmp_path / "nonexistent")
 
     assert cleanup_old_internal_reports() == 0
+
+
+# ---------------------------------------------------------------------------
+# Test mode
+# ---------------------------------------------------------------------------
+
+def test_log_event_suppressed_in_test_mode(tmp_path):
+    set_test_mode(True)
+    try:
+        _log_event("Test Client", "2026-09-15", "cli", "generated")
+        assert not (tmp_path / "delivery_log.csv").exists()
+    finally:
+        set_test_mode(False)
+
+
+def test_log_event_not_suppressed_when_test_mode_off(tmp_path):
+    set_test_mode(False)
+    _log_event("Test Client", "2026-09-15", "cli", "generated")
+    assert (tmp_path / "delivery_log.csv").exists()

@@ -21,6 +21,7 @@ from src.load import load_all
 from src.narrate import narrate_with_retry, NarrationError
 from src.report import NarratedFinding
 from src.rules import run_rules
+from src import security
 from src.security import deliver_report, mark_sent
 
 PROJECT_ROOT = Path(__file__).parent.parent
@@ -38,7 +39,12 @@ def main():
     parser.add_argument("--output", type=Path, default=Path("output/report.pdf"), help="Output PDF path (password-protected client copy)")
     parser.add_argument("--mark-sent", action="store_true", help="Log that a report was sent; requires --shop-name and --report-date")
     parser.add_argument("--report-date", type=str, default=None, help="Report date in YYYY-MM-DD format (used with --mark-sent)")
+    parser.add_argument("--test", action="store_true", help="Test mode: suppress all delivery log writes (PDF output is unchanged)")
     args = parser.parse_args()
+
+    if args.test:
+        security.set_test_mode(True)
+        print("*** TEST MODE — delivery log writes suppressed for this run ***")
 
     if args.mark_sent:
         if not args.report_date:

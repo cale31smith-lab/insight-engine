@@ -26,6 +26,7 @@ import streamlit as st
 
 import column_mapping as cm
 from app_logic import ENTITIES, missing_and_duplicate_entities, unresolved_entities
+from src import security
 from src.load import load_all_from_dfs, DataLoadError
 from src.narrate import narrate_with_retry
 from src.report import NarratedFinding
@@ -38,6 +39,16 @@ TOP_N_FINDINGS = 8
 st.set_page_config(page_title="Contractor Insight Engine", page_icon="\U0001F4CA", layout="centered")
 st.title("Contractor Insight Engine")
 st.caption("Upload a shop's data, map its columns, generate the report -- no code, no terminal.")
+
+# --- Test mode (sidebar) ---
+test_mode = st.sidebar.checkbox(
+    "Test mode",
+    value=False,
+    help="Suppresses all delivery log writes. PDF output is unchanged. Use for development/testing.",
+)
+security.set_test_mode(test_mode)
+if test_mode:
+    st.warning("TEST MODE — delivery log writes suppressed for this session.")
 
 # --- Session state ---
 if "mapped_dfs" not in st.session_state:

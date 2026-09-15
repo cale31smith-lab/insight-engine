@@ -22,6 +22,13 @@ mark_sent(client_name, report_date)
     Log that a report was manually sent to the client (e.g. via email).
     Call this separately after you've actually emailed it.
 
+set_test_mode(enabled)
+    Suppress all delivery log writes for the current process run.
+    Opt-in; default is False. Call once at startup (CLI --test flag or
+    Streamlit sidebar toggle) before any deliver_report / mark_sent call.
+    PDF rendering and password protection are unaffected -- only the CSV
+    log rows are skipped.
+
 cleanup_old_internal_reports(days=90) -> int
     Delete internal PDFs whose filename date is older than `days` days.
     Parses the date from {slug}_{YYYY-MM-DD}.pdf -- does not rely on
@@ -48,6 +55,18 @@ _LOG_FIELDS = ["client_name", "report_date", "delivery_method", "event", "timest
 
 _DATE_RE = re.compile(r"^(.+)_(\d{4}-\d{2}-\d{2})$")
 
+_test_mode: bool = False
+
+
+def set_test_mode(enabled: bool) -> None:
+    """
+    Suppress all delivery log writes for this process run (opt-in).
+    PDF rendering and password protection are unaffected.
+    Call once at startup before any deliver_report / mark_sent call.
+    """
+    global _test_mode
+    _test_mode = enabled
+
 
 def _client_slug(name: str) -> str:
     return re.sub(r"[^\w]", "", name.lower().replace(" ", "_"))
@@ -57,6 +76,8 @@ def _log_event(
     client_name: str, report_date: str, delivery_method: str, event: str
 ) -> None:
     """Append one event row to the delivery log. Never call with a password."""
+    if _test_mode:
+        return
     INTERNAL_REPORTS_DIR.mkdir(parents=True, exist_ok=True)
     write_header = not DELIVERY_LOG_PATH.exists()
     with DELIVERY_LOG_PATH.open("a", newline="", encoding="utf-8") as f:
